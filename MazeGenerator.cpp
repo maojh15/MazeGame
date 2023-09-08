@@ -11,63 +11,66 @@ void MazeGenerator::GenerateMaze(int width, int height, uint32_t random_seed) {
     width_ = width;
     height_ = height;
     int pixel_num = width * height;
-    record_wall.clear();
-    record_wall.resize(pixel_num);
+    maze_struct.InitializeMaze(width, height);
     disjoint_set.Initialize(pixel_num);
-
-    // leave entrance no walls.
-    record_wall[0].is_up_wall_off = record_wall[0].is_left_wall_off = true;
-    // knock off out walls.
-    record_wall[pixel_num - 1].is_down_wall_off = record_wall[pixel_num - 1].is_right_wall_off = true;
 
     RandomKnockOffWalls(random_seed);
 }
 
 void MazeGenerator::RandomKnockOffWalls(uint32_t random_seed) {
     std::default_random_engine rand_engine(random_seed);
-    int num_pixel = record_wall.size();
-    std::uniform_int_distribution<int> rand_int(0, num_pixel - 1);
-    std::uniform_int_distribution<int> rand_wall(0, 3);
+    std::vector<std::pair<int, int>> list_walls;
+    InitializeWalls(list_walls);
 
-    while (disjoint_set.GetNumDisjointSets() > 1) {
-        int selected_pixel = rand_int(rand_engine);
-        int selected_wall = rand_wall(rand_engine);
-        KnockWall(selected_pixel, selected_wall);
+    int num_pixel = width_ * height_;
+    while (disjoint_set.GetNumDisjointSets() > 1
+           && disjoint_set.GetParent(0) != disjoint_set.GetParent(num_pixel - 1)) {
+        std::uniform_int_distribution<int> rand_int(0, list_walls.size() - 1);
+        int wall_index = rand_int(rand_engine);
+        const auto &wall_selected = list_walls[wall_index];
+        maze_struct.AddEdge(wall_selected.first, wall_selected.second);
+        disjoint_set.Union(wall_selected.first, wall_selected.second);
+        std::swap(list_walls[wall_index], list_walls[list_walls.size() - 1]);
+        list_walls.pop_back();
     }
 }
 
-void MazeGenerator::KnockWall(int pixel_selected, int wall_selected) {
-    auto pixel_coord = PixelIndexToCoord(pixel_selected);
-    int neighbour_i, neighbour_j;
-    switch (wall_selected) {
-        case 0: // left
-            neighbour_i = pixel_coord.first;
-            neighbour_j = pixel_coord.second - 1;
-            break;
-        case 1: // up
-            neighbour_i = pixel_coord.first - 1;
-            neighbour_j = pixel_coord.second;
-            break;
-        case 2: // right
-            neighbour_i = pixel_coord.first;
-            neighbour_j = pixel_coord.second + 1;
-            break;
-        case 3: // down
-            neighbour_i = pixel_coord.first + 1;
-            neighbour_j = pixel_coord.second;
-            break;
-        default:
-            break;
+void MazeGenerator::InitializeWalls(std::vector<std::pair<int, int>> &list_walls) {
+    for (int i = 0; i < height_ - 1; ++i) {
+        for (int j = 0; j < width_ - 1; ++j) {
+            list_walls.emplace_back(CoordToPixelIndex(i, j), CoordToPixelIndex(i + 1, j));
+            list_walls.emplace_back(CoordToPixelIndex(i, j), CoordToPixelIndex(i, j + 1));
+        }
     }
-
-    if (neighbour_i < 0 || neighbour_i >= width_ || neighbour_j < 0 || neighbour_j > height_) {
-        return;
+    for (int i = 0; i < height_ - 1; ++i) {
+        list_walls.emplace_back(CoordToPixelIndex(i, width_ - 1), CoordToPixelIndex(i + 1, width_ - 1));
     }
+    for (int j = 0; j < width_ - 1; ++j) {
+        list_walls.emplace_back(CoordToPixelIndex(height_ - 1, j), CoordToPixelIndex(height_ - 1, j + 1));
+    }
+}
 
-    int neighbour_pixel_index = CoordToPixelIndex(neighbour_i, neighbour_j);
-    bool &wall_state = record_wall[neighbour_pixel_index].GetWallState(wall_selected);
-    if (!wall_state) {
-        wall_state = true;
-        disjoint_set.Union(pixel_selected, neighbour_pixel_index);
+void MazeGenerator::PrintMaze(std::ostream &out) const {
+    out << "num of disjoint pixels' sets: " << disjoint_set.GetNumDisjointSets() << "\n";
+    out << "'rd' means exist right wall and down wall; ' d' means only down wall; 'r ' means only right wall\n";
+    for (int i = 0; i < height_; ++i) {
+        for (int j = 0; j < width_; ++j) {
+            int pixel_index = CoordToPixelIndex(i, j);
+            std::string mark;
+            if (i < height_ - 1) {
+                mark += maze_struct.list_nodes[pixel_index].HasNeighbour(CoordToPixelIndex(i + 1, j)) ?
+                        " " : "_";
+            } else {
+                mark += "_";
+            }
+            if (j < width_ - 1) {
+                mark += maze_struct.list_nodes[pixel_index].HasNeighbour(CoordToPixelIndex(i, j + 1)) ?
+                        " " : "|";
+            } else {
+                mark += "|";
+            }
+            out << mark << "";
+        }
+        out << "\n";
     }
 }

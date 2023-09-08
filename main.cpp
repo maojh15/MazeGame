@@ -7,22 +7,18 @@
 #include <string>
 #include <iostream>
 
-std::string WallStateToStr(const MazeGenerator::WallState &wall_state) {
-    std::string res = std::string(wall_state.is_left_wall_off ? "0" : "1") + (wall_state.is_up_wall_off ? "0" : "1")
-                      + (wall_state.is_right_wall_off ? "0" : "1") + (wall_state.is_down_wall_off ? "0" : "1");
-    return res;
-}
-
 int main(int argc, char **argv) {
     MazeGenerator maze_generator;
-    int width = 5;
-    int height = 5;
-    maze_generator.GenerateMaze(width, height);
+    int width = 60;
+    int height = 50;
+    uint32_t rand_seed = 0;
+    std::cout << "Please input width: ";
+    std::cin >> width;
+    std::cout << "Please input height: ";
+    std::cin >> height;
+    std::cout << "Please input random seed: ";
+    std::cin >> rand_seed;
+    maze_generator.GenerateMaze(width, height, rand_seed);
 
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            std::cout << WallStateToStr(maze_generator.GetWallState(i, j)) << " ";
-        }
-        std::cout << "\n";
-    }
+    maze_generator.PrintMaze(std::cout);
 }
