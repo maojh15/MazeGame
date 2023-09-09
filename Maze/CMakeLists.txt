@@ -1,0 +1,1 @@
+add_library(MazeGenerator MazeGenerator.cpp MazeGenerator.h)

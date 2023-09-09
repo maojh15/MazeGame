@@ -23,11 +23,14 @@ void MazeGenerator::RandomKnockOffWalls(uint32_t random_seed) {
     InitializeWalls(list_walls);
 
     int num_pixel = width_ * height_;
-    while (disjoint_set.GetNumDisjointSets() > 1
-           && disjoint_set.GetParent(0) != disjoint_set.GetParent(num_pixel - 1)) {
+    while (disjoint_set.GetNumDisjointSets() > 1) {
         std::uniform_int_distribution<int> rand_int(0, list_walls.size() - 1);
         int wall_index = rand_int(rand_engine);
         const auto &wall_selected = list_walls[wall_index];
+        if (disjoint_set.GetParent(wall_selected.first) == disjoint_set.GetParent(wall_selected.second)) {
+            // There already exist a path from wall_selected.first to wall_selected.second.
+            continue;
+        }
         maze_struct.AddEdge(wall_selected.first, wall_selected.second);
         disjoint_set.Union(wall_selected.first, wall_selected.second);
         std::swap(list_walls[wall_index], list_walls[list_walls.size() - 1]);
