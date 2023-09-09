@@ -5,6 +5,7 @@
 #ifndef MAZE_GAMEMACHINE_H
 #define MAZE_GAMEMACHINE_H
 
+#include "GameResource.h"
 #include "MazeGenerator.h"
 
 #include "imgui.h"
@@ -20,13 +21,19 @@ public:
 
     void ProcessInput(SDL_Event &event);
 
+    bool IsEnd() const { return game_state == END; }
+
 private:
+    GameResource game_resource_;
     MazeGenerator maze;
     int maze_witdh_ = 50, maze_height_ = 50;
     int rand_seed_ = 0;
+    bool has_win_waited_ = false; // when player arrive end point, wait some time before show win image.
+    bool show_win_image_ = true;
+    bool have_found_path_ = false;
 
     enum GameState {
-        START, PLAYING, WIN
+        START, PLAYING, WIN, END
     };
     GameState game_state = START;
 
@@ -52,7 +59,17 @@ private:
 
     void TryMovePlayer(int di, int dj);
 
+    void RenderFunctionalButton();
+
+    void FindShortestPath();
+
+    void RenderShortestPathFound();
+
     std::pair<int, int> player_coord;
+    std::vector<std::pair<int, int>> shortest_path;
+    bool show_shortest_path_ = true;
+    ImVec2 draw_start_coord_;
+    float maze_pixel_size_;
 };
 
 

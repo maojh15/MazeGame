@@ -26,8 +26,9 @@ INITIALIZE_IMGUI()
 
 add_executable(maze_game maze_game.cpp)
 
+add_subdirectory(LoadTexture)
 add_library(GameMachine GameMachine.cpp GameMachine.h)
-target_link_libraries(GameMachine PUBLIC imgui_lib MazeGenerator)
+target_link_libraries(GameMachine PUBLIC imgui_lib MazeGenerator LoadTexture MazeSolverAStar)
 
 target_link_libraries(maze_game PUBLIC GameMachine)
 

@@ -10,8 +10,10 @@
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
-#include <stdio.h>
 #include <SDL.h>
+#include <SDL_filesystem.h>
+
+#include <cstdio>
 
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL_opengles2.h>
@@ -118,7 +120,9 @@ int main(int, char **) {
     //IM_ASSERT(font != NULL);
 //    ImFont *font = io.Fonts->AddFontFromFileTTF("./src/Noteworthy.ttc", 20.0f, nullptr,
 //                                                io.Fonts->GetGlyphRangesChineseFull());
-    ImFont *font = io.Fonts->AddFontFromFileTTF("./src/Noteworthy.ttc", 40.0f, nullptr);
+    auto base_path = SDL_GetBasePath();
+    ImFont *font = io.Fonts->AddFontFromFileTTF((std::string(base_path) + "./src/Noteworthy.ttc").c_str(), 40.0f,
+                                                nullptr);
 
     if (font == nullptr) {
         printf("cannot open font file: Kaiti.ttc\n");
@@ -143,7 +147,7 @@ int main(int, char **) {
     Uint64 ms_per_frame = 1000 / fps;
     std::chrono::steady_clock::time_point time2 = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point time1;
-    while (!done)
+    while (!done && !game_machine.IsEnd())
 #endif
     {
         time1 = time2;

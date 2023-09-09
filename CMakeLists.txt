@@ -10,3 +10,4 @@ target_include_directories(main PRIVATE Maze)
 target_link_libraries(main PUBLIC MazeGenerator)
 
 add_subdirectory(MazeGame)
+add_subdirectory(MazeSolverAStar)
