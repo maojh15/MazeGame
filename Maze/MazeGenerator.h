@@ -64,11 +64,9 @@ public:
 
     void PrintMaze(std::ostream &out) const;
 
-private:
-    DisjointUnionSet disjoint_set;
-    MazeStruct maze_struct;
+    int GetWidth() const {return width_;}
 
-    int width_, height_;
+    int GetHeight() const {return height_;}
 
     int CoordToPixelIndex(int i, int j) const {
         return i * width_ + j;
@@ -77,6 +75,14 @@ private:
     std::pair<int, int> PixelIndexToCoord(int pixel_index) const {
         return std::make_pair(pixel_index / width_, pixel_index % width_);
     }
+
+    std::vector<uint8_t> EncodeMaze() const;
+
+private:
+    DisjointUnionSet disjoint_set;
+    MazeStruct maze_struct;
+
+    int width_, height_;
 
     void RandomKnockOffWalls(uint32_t random_seed);
 

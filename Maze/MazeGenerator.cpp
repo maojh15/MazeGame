@@ -77,3 +77,36 @@ void MazeGenerator::PrintMaze(std::ostream &out) const {
         out << "\n";
     }
 }
+
+/**
+ * Encode maze as a list with each element value use lowest 2-bit represent whether has right wall and
+ * down wall.
+ * element value table:
+ * |                     |without right wall | with right wall |
+ * |without down wall    |   0b00            |   0b10          |
+ * |with down wall       |   0b01            |   0b11          |
+ * @return
+ */
+std::vector<uint8_t> MazeGenerator::EncodeMaze() const {
+    std::vector<uint8_t> encoded_maze(maze_struct.list_nodes.size());
+    for (int i = 0; i < height_; ++i) {
+        for (int j = 0; j < width_; ++j) {
+            int index = CoordToPixelIndex(i, j);
+            uint8_t val = 0;
+            if (j < width_ - 1) {
+                int right_index = CoordToPixelIndex(i, j + 1);
+                if (!maze_struct.list_nodes[index].HasNeighbour(right_index)) {
+                    val += 2;
+                }
+            }
+            if (i < height_ - 1) {
+                int down_index = CoordToPixelIndex(i + 1, j);
+                if (!maze_struct.list_nodes[index].HasNeighbour(down_index)) {
+                    val += 1;
+                }
+            }
+            encoded_maze[index] = val;
+        }
+    }
+    return encoded_maze;
+}
