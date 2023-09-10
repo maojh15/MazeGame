@@ -397,4 +397,6 @@ void GameMachine::SetStartPoint(int mouse_x, int mouse_y) {
 
 void GameMachine::SetEndPoint(int mouse_x, int mouse_y) {
     end_coord_ = MousePositionToMazeCoord(mouse_x, mouse_y);
+    have_found_path_ = false;
+    show_shortest_path_ = true;
 }
