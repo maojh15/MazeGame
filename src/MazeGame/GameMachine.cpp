@@ -226,18 +226,22 @@ bool GameMachine::ProcessInputPlayingState(SDL_Event &event) {
             case SDLK_w:
             case SDLK_UP:
                 TryMovePlayer(-1, 0);
+                return false;
                 break;
             case SDLK_d:
             case SDLK_RIGHT:
                 TryMovePlayer(0, 1);
+                return false;
                 break;
             case SDLK_s:
             case SDLK_DOWN:
                 TryMovePlayer(1, 0);
+                return false;
                 break;
             case SDLK_a:
             case SDLK_LEFT:
                 TryMovePlayer(0, -1);
+                return false;
                 break;
             default:
                 break;
