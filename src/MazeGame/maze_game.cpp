@@ -121,7 +121,7 @@ int main(int, char **) {
 //    ImFont *font = io.Fonts->AddFontFromFileTTF("./src/Noteworthy.ttc", 20.0f, nullptr,
 //                                                io.Fonts->GetGlyphRangesChineseFull());
     auto base_path = SDL_GetBasePath();
-    ImFont *font = io.Fonts->AddFontFromFileTTF((std::string(base_path) + "./src/Noteworthy.ttc").c_str(), 40.0f,
+    ImFont *font = io.Fonts->AddFontFromFileTTF((std::string(base_path) + "./resources/Noteworthy.ttc").c_str(), 40.0f,
                                                 nullptr);
 
     if (font == nullptr) {
@@ -163,7 +163,9 @@ int main(int, char **) {
         auto io = ImGui::GetIO();
         io.WantCaptureKeyboard = false;
         while (SDL_PollEvent(&event)) {
-            game_machine.ProcessInput(event);
+            if (!game_machine.ProcessInput(event)) {
+                continue;
+            }
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
                 done = true;

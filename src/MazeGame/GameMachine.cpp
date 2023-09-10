@@ -33,7 +33,7 @@ void GameMachine::RenderStartState() {
     float slider_witdh = std::min(450.0, avail.x * 0.9);
     ImGui::PushItemWidth(slider_witdh);
     ImGui::SetCursorPosX((avail.x - slider_witdh) / 2);
-    ImGui::SliderInt("width", &maze_witdh_, 2, 200, "width: %d");
+    ImGui::SliderInt("width", &maze_width_, 2, 200, "width: %d");
     ImGui::SetCursorPosX((avail.x - slider_witdh) / 2);
     ImGui::SliderInt("height", &maze_height_, 2, 200, "height: %d");
     ImGui::PopItemWidth();
@@ -51,13 +51,21 @@ void GameMachine::RenderStartState() {
     }
 
     ImGui::SetCursorPosX((avail.x - button_witdh) / 2);
-    if (ImGui::Button("END", ImVec2(button_witdh, 50))) {
+    if (ImGui::Button("EXIT", ImVec2(button_witdh, 50))) {
         game_state = END;
     }
 }
 
 void GameMachine::RenderPlayingState() {
     RenderFunctionalButton();
+
+    if (next_click_set_start_point_) {
+        ImGui::Text("Click a point\nas Start point.\nRight click to cancel");
+    }
+
+    if (next_click_set_end_point_) {
+        ImGui::Text("Click a point\nas End point.\nRight click to cancel");
+    }
 
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     DrawMaze(draw_list);
@@ -66,7 +74,7 @@ void GameMachine::RenderPlayingState() {
         RenderShortestPathFound();
     }
 
-    if (player_coord.first == maze_height_ - 1 && player_coord.second == maze_witdh_ - 1 && game_state == PLAYING) {
+    if (player_coord_.first == maze_height_ - 1 && player_coord_.second == maze_width_ - 1 && game_state == PLAYING) {
         game_state = WIN;
     }
 }
@@ -106,10 +114,11 @@ void GameMachine::SetRenderStyle() {
 void GameMachine::DrawMaze(ImDrawList *draw_list) {
     auto io = ImGui::GetIO();
     const auto &avail = io.DisplaySize;
-    float scale = 0.95;
-    maze_pixel_size_ = std::min(scale * avail.x / maze_witdh_, scale * avail.y / maze_height_);
+    float scale_x = 0.85;
+    float scale_y = 0.95;
+    maze_pixel_size_ = std::min(scale_x * avail.x / maze_width_, scale_y * avail.y / maze_height_);
 
-    draw_start_coord_.x = (avail.x - maze_witdh_ * maze_pixel_size_) / 2;
+    draw_start_coord_.x = (avail.x - maze_width_ * maze_pixel_size_) / 2;
     draw_start_coord_.y = (avail.y - maze_height_ * maze_pixel_size_) / 2;
     ImColor wall_color(0, 0, 0, 255);
     ImU32 compress_wall_color = ImU32(wall_color);
@@ -117,14 +126,14 @@ void GameMachine::DrawMaze(ImDrawList *draw_list) {
 
     // draw out rectangle
     ImVec2 tmp_coord1(draw_start_coord_.x + maze_pixel_size_, draw_start_coord_.y);
-    ImVec2 tmp_coord2(draw_start_coord_.x + maze_pixel_size_ * maze_witdh_, draw_start_coord_.y);
+    ImVec2 tmp_coord2(draw_start_coord_.x + maze_pixel_size_ * maze_width_, draw_start_coord_.y);
     draw_list->AddLine(tmp_coord1, tmp_coord2, compress_wall_color, boundary_wall_thick);
     tmp_coord1.x = tmp_coord2.x, tmp_coord1.y = tmp_coord2.y + maze_pixel_size_ * (maze_height_ - 1);
     draw_list->AddLine(tmp_coord1, tmp_coord2, compress_wall_color, boundary_wall_thick);
     tmp_coord1.x = draw_start_coord_.x, tmp_coord1.y = draw_start_coord_.y + maze_pixel_size_;
     tmp_coord2.x = draw_start_coord_.x, tmp_coord2.y = draw_start_coord_.y + maze_pixel_size_ * maze_height_;
     draw_list->AddLine(tmp_coord1, tmp_coord2, compress_wall_color, boundary_wall_thick);
-    tmp_coord1.x = draw_start_coord_.x + maze_pixel_size_ * (maze_witdh_ - 1);
+    tmp_coord1.x = draw_start_coord_.x + maze_pixel_size_ * (maze_width_ - 1);
     tmp_coord1.y = tmp_coord2.y;
     draw_list->AddLine(tmp_coord1, tmp_coord2, compress_wall_color, boundary_wall_thick);
 
@@ -132,7 +141,7 @@ void GameMachine::DrawMaze(ImDrawList *draw_list) {
     float wall_thick = 1.0f;
     for (int i = 0; i < maze_height_; ++i) {
         ImVec2 left_top_coord(draw_start_coord_.x, draw_start_coord_.y + i * maze_pixel_size_);
-        for (int j = 0; j < maze_witdh_; ++j) {
+        for (int j = 0; j < maze_width_; ++j) {
             int index = maze.CoordToPixelIndex(i, j);
             int val = encoded_maze[index];
             if (val & 1) {
@@ -153,36 +162,52 @@ void GameMachine::DrawMaze(ImDrawList *draw_list) {
         }
     }
 
+    // draw end point
+//    tmp_coord1.x = draw_start_coord_.x + (maze_width_ + 0.5) * maze_pixel_size_;
+    ImColor tmp_color(91, 240, 91, 255);
+    tmp_coord1.x = draw_start_coord_.x + (end_coord_.second + 0.15) * maze_pixel_size_;
+    tmp_coord1.y = draw_start_coord_.y + (end_coord_.first + 0.15) * maze_pixel_size_;
+    tmp_coord2.x = draw_start_coord_.x + (end_coord_.second + 0.85) * maze_pixel_size_;
+    tmp_coord2.y = draw_start_coord_.y + (end_coord_.first + 0.85) * maze_pixel_size_;
+    draw_list->AddRectFilled(tmp_coord1, tmp_coord2, ImU32(tmp_color), 1.0f);
+
     // draw player
-    ImColor player_color(249, 91, 91, 255);
-    tmp_coord1.x = draw_start_coord_.x + (player_coord.second + 0.5) * maze_pixel_size_;
-    tmp_coord1.y = draw_start_coord_.y + (player_coord.first + 0.5) * maze_pixel_size_;
-    draw_list->AddCircleFilled(tmp_coord1, maze_pixel_size_ * 0.45, ImU32(player_color));
+    tmp_color = ImColor(249, 91, 91, 255);
+    tmp_coord1.x = draw_start_coord_.x + (player_coord_.second + 0.5) * maze_pixel_size_;
+    tmp_coord1.y = draw_start_coord_.y + (player_coord_.first + 0.5) * maze_pixel_size_;
+    draw_list->AddCircleFilled(tmp_coord1, maze_pixel_size_ * 0.45, ImU32(tmp_color));
 }
 
-void GameMachine::ProcessInput(SDL_Event &event) {
+/**
+ *
+ * @param event
+ * @return true: if event can be handled by other functions; false: if event should be eaten.
+ */
+bool GameMachine::ProcessInput(SDL_Event &event) {
     switch (game_state) {
         case START:
-            ProcessInputStartState(event);
+            return ProcessInputStartState(event);
             break;
         case PLAYING:
-            ProcessInputPlayingState(event);
+            return ProcessInputPlayingState(event);
             break;
         case WIN:
-            ProcessInputWinState(event);
+            return ProcessInputWinState(event);
             break;
     }
+    return true;
 }
 
-void GameMachine::ProcessInputStartState(SDL_Event &event) {
+bool GameMachine::ProcessInputStartState(SDL_Event &event) {
     if (event.type == SDL_KEYDOWN) {
         if (event.key.keysym.sym == SDLK_RETURN) {
             StartGame();
         }
     }
+    return true;
 }
 
-void GameMachine::ProcessInputPlayingState(SDL_Event &event) {
+bool GameMachine::ProcessInputPlayingState(SDL_Event &event) {
     if (event.type == SDL_KEYDOWN) {
         switch (event.key.keysym.sym) {
             case SDLK_w:
@@ -205,16 +230,44 @@ void GameMachine::ProcessInputPlayingState(SDL_Event &event) {
                 break;
         }
     }
+
+    if (next_click_set_start_point_ && event.type == SDL_MOUSEBUTTONDOWN) {
+        if (event.button.button == 1) {
+            SetStartPoint(event.button.x, event.button.y);
+            next_click_set_start_point_ = false;
+            return false;
+        } else if (event.button.button == 3) {
+            next_click_set_start_point_ = false;
+            return false;
+        }
+
+    }
+
+    if (next_click_set_end_point_ && event.type == SDL_MOUSEBUTTONDOWN) {
+        if (event.button.button == 1) {
+            SetEndPoint(event.button.x, event.button.y);
+            next_click_set_end_point_ = false;
+            return false;
+        } else if (event.button.button == 3) {
+            next_click_set_end_point_ = false;
+            return false;
+        }
+        return false;
+    }
+    return true;
 }
 
-void GameMachine::ProcessInputWinState(SDL_Event &event) {
-
+bool GameMachine::ProcessInputWinState(SDL_Event &event) {
+    return true;
 }
 
 void GameMachine::StartGame() {
-    maze.GenerateMaze(maze_witdh_, maze_height_, rand_seed_);
+    maze.GenerateMaze(maze_width_, maze_height_, rand_seed_);
     encoded_maze = maze.EncodeMaze();
-    player_coord.first = player_coord.second = 0;
+    player_coord_.first = player_coord_.second = 0;
+    start_coord_ = player_coord_;
+    end_coord_.first = maze_height_ - 1;
+    end_coord_.second = maze_width_ - 1;
     has_win_waited_ = false;
     show_win_image_ = true;
     have_found_path_ = false;
@@ -223,11 +276,11 @@ void GameMachine::StartGame() {
 }
 
 void GameMachine::TryMovePlayer(int di, int dj) {
-    int index = maze.CoordToPixelIndex(player_coord.first, player_coord.second);
+    int index = maze.CoordToPixelIndex(player_coord_.first, player_coord_.second);
     if (maze.GetMazeStruct().list_nodes[index].HasNeighbour(
-            maze.CoordToPixelIndex(player_coord.first + di, player_coord.second + dj))) {
-        player_coord.first += di;
-        player_coord.second += dj;
+            maze.CoordToPixelIndex(player_coord_.first + di, player_coord_.second + dj))) {
+        player_coord_.first += di;
+        player_coord_.second += dj;
     }
 }
 
@@ -277,11 +330,22 @@ void GameMachine::RenderFunctionalButton() {
     }
 
     ImGui::PopStyleColor(3);
+
+    button_width = 180;
+    ImGui::SetCursorPosY(4 * button_height);
+    if (ImGui::Button("Set Start Point", ImVec2(button_width, button_height))) {
+        next_click_set_start_point_ = true;
+    }
+    if (ImGui::Button("Set End Point", ImVec2(button_width, button_height))) {
+        next_click_set_end_point_ = true;
+    }
 }
 
 void GameMachine::FindShortestPath() {
     MazeSolverAStar maze_solver;
-    shortest_path = maze_solver.FindShortestPath(maze);
+    shortest_path = maze_solver.FindShortestPath(maze,
+                                                 maze.CoordToPixelIndex(start_coord_.first, start_coord_.second),
+                                                 maze.CoordToPixelIndex(end_coord_.first, end_coord_.second));
 //    for (auto &x: shortest_path) {
 //        std::cout << "[" << x.first << "," << x.second << "]->";
 //    }
@@ -297,7 +361,7 @@ void GameMachine::RenderShortestPathFound() {
         ImVec2 to_point(draw_start_coord_.x + (shortest_path[0].second + 0.5) * maze_pixel_size_,
                         draw_start_coord_.y + (shortest_path[0].first + 0.5) * maze_pixel_size_);
         ImVec2 from_point;
-        for (int i = 2; i < shortest_path.size(); ++i) {
+        for (int i = 1; i < shortest_path.size(); ++i) {
             from_point = std::move(to_point);
             const auto &elem = shortest_path[i];
             to_point.x = draw_start_coord_.x + (elem.second + 0.5) * maze_pixel_size_;
@@ -305,4 +369,32 @@ void GameMachine::RenderShortestPathFound() {
             drawList->AddLine(from_point, to_point, compressed_path_color, draw_path_thickness);
         }
     }
+}
+
+std::pair<int, int> GameMachine::MousePositionToMazeCoord(int mouse_x, int mouse_y) {
+    float coord_x = mouse_x, coord_y = mouse_y;
+    if (coord_x < draw_start_coord_.x) {
+        coord_x = draw_start_coord_.x;
+    } else if (coord_x > draw_start_coord_.x + (maze_width_ - 1) * maze_pixel_size_) {
+        coord_x = draw_start_coord_.x + (maze_width_ - 1) * maze_pixel_size_;
+    }
+    if (coord_y < draw_start_coord_.y) {
+        coord_y = draw_start_coord_.y;
+    } else if (coord_y > draw_start_coord_.y + (maze_height_ - 1) * maze_pixel_size_) {
+        coord_y = draw_start_coord_.y + (maze_height_ - 1) * maze_pixel_size_;
+    }
+    int pos_i = (coord_y - draw_start_coord_.y) / maze_pixel_size_;
+    int pos_j = (coord_x - draw_start_coord_.x) / maze_pixel_size_;
+    return std::make_pair(pos_i, pos_j);
+}
+
+void GameMachine::SetStartPoint(int mouse_x, int mouse_y) {
+    player_coord_ = MousePositionToMazeCoord(mouse_x, mouse_y);
+    start_coord_ = player_coord_;
+    have_found_path_ = false;
+    show_shortest_path_ = true;
+}
+
+void GameMachine::SetEndPoint(int mouse_x, int mouse_y) {
+    end_coord_ = MousePositionToMazeCoord(mouse_x, mouse_y);
 }

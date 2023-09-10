@@ -34,7 +34,7 @@ public:
     }
 
 private:
-    std::string root_dir = "src/";
+    std::string root_dir = "resources/";
 
     const std::string img_background = "background.jpg";
     const std::string img_win = "Win.png";
