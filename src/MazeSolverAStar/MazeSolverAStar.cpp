@@ -19,6 +19,7 @@
 std::vector<std::pair<int, int>> MazeSolverAStar::FindShortestPath(const MazeGenerator &maze,
                                                                    int start_index,
                                                                    int end_index) {
+    visited_pixel_index.clear();
     const auto &maze_struct = maze.GetMazeStruct();
     int maze_pixel_size = maze_struct.list_nodes.size();
     if (end_index == -1) {
@@ -53,6 +54,7 @@ std::vector<std::pair<int, int>> MazeSolverAStar::FindShortestPath(const MazeGen
         }
         heap.pop();
         known_index[cur] = true;
+        visited_pixel_index.emplace_back(cur);
         for (int next: maze_struct.list_nodes[cur].neighbour) {
             if (known_index[next]) {
                 continue;

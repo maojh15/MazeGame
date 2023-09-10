@@ -12,6 +12,7 @@ public:
     std::vector<std::pair<int, int>>
     FindShortestPath(const MazeGenerator &maze, int start_index = 0, int end_index = -1);
 
+    std::vector<int> visited_pixel_index;
 private:
     static int EstimateDistanceToEndPoint(const std::pair<int, int> &cur_point,
                                           const std::pair<int, int> &end_point) {

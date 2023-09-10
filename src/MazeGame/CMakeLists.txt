@@ -24,7 +24,15 @@ endfunction()
 
 INITIALIZE_IMGUI()
 
-add_executable(maze_game maze_game.cpp)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(MACOSX TRUE)
+endif()
+
+if (MACOSX)
+    add_executable(maze_game MACOSX_BUNDLE maze_game.cpp)
+else()
+    add_executable(maze_game MACOSX_BUNDLE maze_game.cpp)
+endif()
 
 add_subdirectory(LoadTexture)
 add_library(GameMachine GameMachine.cpp GameMachine.h)
@@ -40,12 +48,14 @@ target_link_libraries(maze_game PUBLIC GameMachine)
 install(TARGETS maze_game
         DESTINATION "${CMAKE_SOURCE_DIR}/bin")
 
-set(CUR_TARGET maze_game)
-set_target_properties(${CUR_TARGET} PROPERTIES
-    BUNDLE True
-    MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
-    MACOSX_BUNDLE_BUNDLE_NAME ${CUR_TARGET}
-    MACOSX_BUNDLE_BUNDLE_VERSION "0.1"
-    MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
-)
+if (MAXCOS)
+    set(CUR_TARGET maze_game)
+    set_target_properties(${CUR_TARGET} PROPERTIES
+        BUNDLE True
+        MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
+        MACOSX_BUNDLE_BUNDLE_NAME ${CUR_TARGET}
+        MACOSX_BUNDLE_BUNDLE_VERSION "0.1"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
+    )
+endif()

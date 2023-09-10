@@ -137,6 +137,19 @@ void GameMachine::DrawMaze(ImDrawList *draw_list) {
     tmp_coord1.y = tmp_coord2.y;
     draw_list->AddLine(tmp_coord1, tmp_coord2, compress_wall_color, boundary_wall_thick);
 
+    if (draw_visited_pixel_) {
+        // draw visited pixel;
+        ImU32 visited_pixel_col = ImU32(ImColor(186, 255, 21, 125));
+        for (int pixel_index: visited_index_in_A_star_search_) {
+            std::pair<int, int> coord = maze.PixelIndexToCoord(pixel_index);
+            tmp_coord1.x = draw_start_coord_.x + (coord.second) * maze_pixel_size_;
+            tmp_coord1.y = draw_start_coord_.y + (coord.first) * maze_pixel_size_;
+            tmp_coord2.x = draw_start_coord_.x + (coord.second + 1) * maze_pixel_size_;
+            tmp_coord2.y = draw_start_coord_.y + (coord.first + 1) * maze_pixel_size_;
+            draw_list->AddRectFilled(tmp_coord1, tmp_coord2, visited_pixel_col);
+        }
+    }
+
     // draw maze
     float wall_thick = 1.0f;
     for (int i = 0; i < maze_height_; ++i) {
@@ -270,8 +283,7 @@ void GameMachine::StartGame() {
     end_coord_.second = maze_width_ - 1;
     has_win_waited_ = false;
     show_win_image_ = true;
-    have_found_path_ = false;
-    show_shortest_path_ = true;
+    ResetDrawFlags();
     game_state = PLAYING;
 }
 
@@ -285,9 +297,9 @@ void GameMachine::TryMovePlayer(int di, int dj) {
 }
 
 void GameMachine::RenderFunctionalButton() {
-    ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4) ImColor::HSV(8 / 9.0f, 0.6f, 0.95f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4) ImColor::HSV(8 / 9.0f, 0.7f, 0.9f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4) ImColor::HSV(8 / 9.0f, 0.8f, 0.9f));
+    ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4) ImColor::HSV(8 / 9.0f, 0.6f, 0.95f, 0.7f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4) ImColor::HSV(8 / 9.0f, 0.7f, 0.9f, 0.7f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4) ImColor::HSV(8 / 9.0f, 0.8f, 0.9f, 0.7f));
 
     auto io = ImGui::GetIO();
     int button_width = 200;
@@ -327,6 +339,18 @@ void GameMachine::RenderFunctionalButton() {
                           ImVec2(button_width, button_height))) {
             show_shortest_path_ = !show_shortest_path_;
         }
+
+        const std::string hint_show_visited_path = "show visited pos";
+        const std::string hint_hide_visited_path = "hide visited pos";
+        button_width = 180;
+        ImGui::SetCursorPosX(io.DisplaySize.x - 5 - button_width);
+        if (ImGui::Button((draw_visited_pixel_ ? hint_hide_visited_path : hint_show_visited_path).c_str(),
+                          ImVec2(button_width, button_height))) {
+            draw_visited_pixel_ = !draw_visited_pixel_;
+        }
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.95, 0.95, 0.1, 0.95));
+        ImGui::SetItemTooltip("Show/Hide visited position\nin A*-algorithm");
+        ImGui::PopStyleColor();
     }
 
     ImGui::PopStyleColor(3);
@@ -346,6 +370,7 @@ void GameMachine::FindShortestPath() {
     shortest_path = maze_solver.FindShortestPath(maze,
                                                  maze.CoordToPixelIndex(start_coord_.first, start_coord_.second),
                                                  maze.CoordToPixelIndex(end_coord_.first, end_coord_.second));
+    visited_index_in_A_star_search_ = std::move(maze_solver.visited_pixel_index);
 //    for (auto &x: shortest_path) {
 //        std::cout << "[" << x.first << "," << x.second << "]->";
 //    }
@@ -391,12 +416,16 @@ std::pair<int, int> GameMachine::MousePositionToMazeCoord(int mouse_x, int mouse
 void GameMachine::SetStartPoint(int mouse_x, int mouse_y) {
     player_coord_ = MousePositionToMazeCoord(mouse_x, mouse_y);
     start_coord_ = player_coord_;
-    have_found_path_ = false;
-    show_shortest_path_ = true;
+    ResetDrawFlags();
 }
 
 void GameMachine::SetEndPoint(int mouse_x, int mouse_y) {
     end_coord_ = MousePositionToMazeCoord(mouse_x, mouse_y);
+    ResetDrawFlags();
+}
+
+void GameMachine::ResetDrawFlags() {
     have_found_path_ = false;
     show_shortest_path_ = true;
+    draw_visited_pixel_ = false;
 }

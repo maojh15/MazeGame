@@ -69,6 +69,8 @@ private:
 
     void SetEndPoint(int mouse_x, int mouse_y);
 
+    void ResetDrawFlags();
+
     std::pair<int, int> MousePositionToMazeCoord(int mouse_x, int mouse_y);
 
     bool next_click_set_start_point_ = false;
@@ -79,6 +81,8 @@ private:
     bool show_shortest_path_ = true;
     ImVec2 draw_start_coord_;
     float maze_pixel_size_;
+    std::vector<int> visited_index_in_A_star_search_;
+    bool draw_visited_pixel_ = false;
 };
 
 
