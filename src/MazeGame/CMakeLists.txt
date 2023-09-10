@@ -31,7 +31,7 @@ endif()
 if (MACOSX)
     add_executable(maze_game MACOSX_BUNDLE maze_game.cpp)
 else()
-    add_executable(maze_game MACOSX_BUNDLE maze_game.cpp)
+    add_executable(maze_game maze_game.cpp)
 endif()
 
 add_subdirectory(LoadTexture)
