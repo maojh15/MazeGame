@@ -1,0 +1,3 @@
+[submodule "MazeGameSolveAssets"]
+	path = MazeGameSolveAssets
+	url = git@github.com:maojh15/MazeGameSolveAssets.git

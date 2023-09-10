@@ -121,7 +121,7 @@ int main(int, char **) {
 //    ImFont *font = io.Fonts->AddFontFromFileTTF("./src/Noteworthy.ttc", 20.0f, nullptr,
 //                                                io.Fonts->GetGlyphRangesChineseFull());
     auto base_path = SDL_GetBasePath();
-    ImFont *font = io.Fonts->AddFontFromFileTTF((std::string(base_path) + "./resources/Noteworthy.ttc").c_str(), 40.0f,
+    ImFont *font = io.Fonts->AddFontFromFileTTF((std::string(base_path) + "MazeGameSolveAssets/resources/Noteworthy.ttc").c_str(), 40.0f,
                                                 nullptr);
 
     if (font == nullptr) {
